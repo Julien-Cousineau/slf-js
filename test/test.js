@@ -4,10 +4,10 @@ const t = require('tape');
 const fs = require('fs');
 const util = require('../src/util.js');
 const selafin = require('../src/slf.js');
-
-const filename_0 = '../data/demo1.slf';
 const values = require('../data/demo1.js');
 
+
+const filename_0 = './data/demo1.slf';
 
 // const filename_10 = '../data/demo1.slf';
 

@@ -1,4 +1,4 @@
-# slf-py
+# slf-js
 Description
 
 ## History

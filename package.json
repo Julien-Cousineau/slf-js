@@ -1,0 +1,29 @@
+{
+  "name": "slf-js",
+  "version": "0.0.1",
+  "description": "JavaScript to read selafin files",
+  "main": "src/slf.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "node test/test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Julien-Cousineau/slf-js.git"
+  },
+  "keywords": [
+    "selafin",
+    "telemac"
+  ],
+  "author": "Julien Cousineau",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Julien-Cousineau/slf-js/issues"
+  },
+  "homepage": "https://github.com/Julien-Cousineau/slf-js#readme",
+  "dependencies": {
+    "tape": "^4.8.0"
+  }
+}
