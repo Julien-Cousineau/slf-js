@@ -13,7 +13,6 @@ exports.range = function(end,type) {
     }
     return array;
 };
-
 Float32Array.prototype.max = function(){
     var max = -Infinity, i = 0, len = this.length;
     for ( ; i < len; i++ )
@@ -26,3 +25,19 @@ Float32Array.prototype.min = function(){
       if ( this[i] < min ) min = this[i];
     return min;
 };
+
+Uint32Array.prototype.add = function(value){
+  for(let i=0,n=this.length;i<n;i++){
+    this[i]+=value;
+  }
+};
+
+
+Float32Array.prototype.compare = function( a ) {
+  const epsilon = 1.0E-7;
+    for (var i = 0, n = this.length; i<n; i++) {
+      if (a[i] - this[i] > epsilon) return false
+    }
+  return true
+}
+  

@@ -66,15 +66,15 @@ Selafin.prototype = {
     this.tags =this.getTimeHistorySLF(posTS);
     if (debug) console.timeEnd('Get frame tags');
     
-    if (debug) console.time('Get frame tags');
+    if (debug) console.time('Get min/max');
     this.minmax = this.getMinMax();
-    if (debug) console.timeEnd('Get frame tags');
+    if (debug) console.timeEnd('Get min/max');
     // ~~> keeping buffer?
     if (!(keepbuffer)) this.uint8array = null;
     
     // ~~> initialize dynamic properties
-    this._ELEMENTXY = null;
-    this._ELEMENTAREA = null;
+    this._TRIXY = null;
+    this._TRIAREA = null;
     this._CX = null;
     this._CY = null;
     
@@ -301,7 +301,7 @@ Selafin.prototype = {
     
     // ~~> get element xy
     if (debug) console.time('Get element frame');
-    let exy = this._ELEMENTXY = new Float32Array(this.NELEM3*this.NDP3);
+    let exy = this._TRIXY = new Float32Array(this.NELEM3*this.NDP3);
     const values = this.getFrame(frame,indexes);
     let n1,n2,n3;
     for(let i=0,j=0,n=this.NELEM3;i<n;i++,j+=3){
@@ -325,31 +325,8 @@ Selafin.prototype = {
     }
     return new Float32Array([min,max]);
   },
-  get ELEMENTXY(){
-    if(this._ELEMENTXY) return this._ELEMENTXY;
-    let debug = this.options.debug;
-    
-    // ~~> get element xy
-    if (debug) console.time('Get element xy');
-    let exy = this._ELEMENTXY = new Float32Array(this.NELEM3*this.NDP3*3);
-    let n1,n2,n3;
-    for(let i=0,j=0,n=this.NELEM3;i<n;i++,j+=9){
-      n1 = this.IKLE3[i];
-      n2 = this.IKLE3[i+this.NELEM3];
-      n3 = this.IKLE3[i+2*this.NELEM3];
-      exy[j] = this.MESHX[n1];
-      exy[j+1] = this.MESHY[n1];
-      // z = 0.
-      exy[j+3] = this.MESHX[n2];
-      exy[j+4] = this.MESHY[n2];
-      // z = 0.
-      exy[j+6] = this.MESHX[n3];
-      exy[j+7] = this.MESHY[n3];
-      // z = 0.
-    }
-    if (debug) console.timeEnd('Get element xy');
-    return this._ELEMENTXY;
-  },
+
+
   getElement:function(indexes){
     indexes = (Number.isInteger(indexes)) ? [indexes]:indexes;
     
@@ -389,12 +366,48 @@ Selafin.prototype = {
     }
     return newIKLE;
   },
-  get ELEMENTAREA(){
-    if(this._ELEMENTAREA) return this._ELEMENTAREA;
-    
+  get TRIXY(){
+    if (!(this._TRIXY)) this.getTriXY();
+    return this._TRIXY;
+  },  
+  get CX(){
+    if(!(this._CX)) this.getTriCentroid();
+    return this._CX;
+  },
+  get CY(){
+    if (!(this._CY)) this.getTriCentroid();
+    return this._CY;
+  },  
+  get TRIAREA(){
+    if (!(this._TRIAREA)) this.getTriArea();
+    return this._TRIAREA;
+  },
+  getTriXY:function(){
+    let debug = this.options.debug;
+    // ~~> get element xy
+    if (debug) console.time('Get element xy');
+    let exy = this._TRIXY = new Float32Array(this.NELEM3*this.NDP3*3);
+    let n1,n2,n3;
+    for(let i=0,j=0,n=this.NELEM3;i<n;i++,j+=9){
+      n1 = this.IKLE3[i];
+      n2 = this.IKLE3[i+this.NELEM3];
+      n3 = this.IKLE3[i+2*this.NELEM3];
+      exy[j] = this.MESHX[n1];
+      exy[j+1] = this.MESHY[n1];
+      // z = 0.
+      exy[j+3] = this.MESHX[n2];
+      exy[j+4] = this.MESHY[n2];
+      // z = 0.
+      exy[j+6] = this.MESHX[n3];
+      exy[j+7] = this.MESHY[n3];
+      // z = 0.
+    }
+    if (debug) console.timeEnd('Get element xy');
+  },  
+  getTriArea:function(){
     if (this.options.debug) console.time('Get element area');
     // Area was compute using cross-product
-    let area = this._ELEMENTAREA = new Float32Array(this.NELEM3);
+    let area = this._TRIAREA = new Float32Array(this.NELEM3);
     let n1,n2,n3;
     for(let i=0,n=this.NELEM3;i<n;i++){
       n1 = this.IKLE3[i];
@@ -405,46 +418,32 @@ Selafin.prototype = {
                       );
     }
     if (this.options.debug) console.timeEnd('Get element area');
-    return this._ELEMENTAREA;
   },
-  get CX(){
-    if(this._CX) return this._CX;
-    
-    this.getElementCentroid();
-    return this._CX;
-  },
-  get CY(){
-    if(this._CY) return this._CY;
-    this.getElementCentroid();
-    return this._CY;
-  },  
-  getElementCentroid:function(){
+  getTriCentroid:function(){
     if (this.options.debug) console.time('Get element centroid');
     // Centoid was compute using mean of X and Y
     let CX = this._CX = new Float32Array(this.NELEM3);
     let CY = this._CY = new Float32Array(this.NELEM3);
+    let dummy = new Float32Array(1)
+    dummy[0] = 3.0 
     let n1,n2,n3;
     for(let i=0,n=this.NELEM3;i<n;i++){
       n1 = this.IKLE3[i];
       n2 = this.IKLE3[i+this.NELEM3];
       n3 = this.IKLE3[i+2*this.NELEM3];
-      CX[i] = (this.MESHX[n1] + this.MESHX[n2] + this.MESHX[n3]) / 3.0;
-      CY[i] = (this.MESHY[n1] + this.MESHY[n2] + this.MESHY[n3]) / 3.0;
+      CX[i] = (this.MESHX[n1] + this.MESHX[n2] + this.MESHX[n3]) / dummy[0];
+      CY[i] = (this.MESHY[n1] + this.MESHY[n2] + this.MESHY[n3]) / dummy[0];
     }
+    n1 = this.IKLE3[0];
+    n2 = this.IKLE3[0+this.NELEM3];
+    n3 = this.IKLE3[0+2*this.NELEM3];
     if (this.options.debug) console.timeEnd('Get element centroid');
   },  
-};
-
-Uint32Array.prototype.add = function(value){
-  for(let i=0,n=this.length;i<n;i++){
-    this[i]+=value;
-  }
 };
 
 function extend(dest, src) {
     for (var i in src) dest[i] = src[i];
     return dest;
 }
-
 
 module.exports = Selafin;
