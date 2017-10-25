@@ -3,6 +3,7 @@
 const bufferpack = require('./bufferpack');
 const util = require('./util');
 
+
 /**
  * Create Selafin Object - opentelemac.org
  * @param {Buffer} buffer - Buffer containing binary information
@@ -17,6 +18,8 @@ function Selafin(buffer,options){
 
 Selafin.prototype = {
     options: {
+    fromProj: 'EPSG:4326',
+    toProj:   'EPSG:4326',
     keepbuffer: 0,          // kepp buffer in memory
     debug: 0                // logging level (0, 1 or 2)
   },
@@ -60,28 +63,39 @@ Selafin.prototype = {
     if (debug) console.time('Get mesh XY');
     let posTS = this.getHeaderFloatsSLF(posHeader);
     if (debug) console.timeEnd('Get mesh XY');
-    
+
     // ~~> frames
     if (debug) console.time('Get frame tags');
     this.tags =this.getTimeHistorySLF(posTS);
     if (debug) console.timeEnd('Get frame tags');
     
-    if (debug) console.time('Get min/max');
-    this.minmax = this.getMinMax();
-    if (debug) console.timeEnd('Get min/max');
     // ~~> keeping buffer?
     if (!(keepbuffer)) this.uint8array = null;
     
-    // ~~> initialize dynamic properties
-    this._TRIXY = null;
-    this._TRIAREA = null;
-    this._CX = null;
-    this._CY = null;
+    // ~~> transform xy mesh
+    if (debug) console.time('Transform mesh XY');
+    this.transform();
+    if (debug) console.timeEnd('Transform mesh XY');
+    
+    // ~~> min/max values
+    if (debug) console.time('Get min/max');
+    this.minmax = this.getMinMax();
+    if (debug) console.timeEnd('Get min/max');
+    
+    this.initializeProperties();
+
     
     if (debug) {
       console.timeEnd('Initialised selafin object');
       console.log("NELEM:%d,NPOIN:%d,NFRAME:%d",this.NELEM3,this.NPOIN3,this.NFRAME);
     }
+  },
+  initializeProperties:function(){
+    // ~~> initialize dynamic properties
+    this._TRIXY = null;
+    this._TRIAREA = null;
+    this._CX = null;
+    this._CY = null;
   },
   getEndianFromChar:function(nchar){
     let uint8array =  this.uint8array;
@@ -365,6 +379,30 @@ Selafin.prototype = {
       newIKLE[i+2*this.NELEM3] = this.IKLE3[j+2];
     }
     return newIKLE;
+  },
+  changeProj:function(from,to){
+    this.options.fromProj = from;
+    this.options.toProj = to;
+    if(from !== to){
+      this.initializeProperties();
+      this.transform();
+    }
+  },
+  transform:function(){
+    const fromProj = this.options.fromProj;
+    const toProj = this.options.toProj;
+    if(fromProj !== toProj){
+      const transform = util.proj4(fromProj,toProj);
+      let coord;
+      console.log(fromProj,toProj)
+      for(let i=0;i<this.NPOIN3;i++){
+        coord=transform.forward([this.MESHX[i],this.MESHY[i]]);
+        // console.log(coord)
+        this.MESHX[i] = coord[0];
+        this.MESHY[i] = coord[1];
+      }
+      this.options.fromProj = toProj;
+    }
   },
   get TRIXY(){
     if (!(this._TRIXY)) this.getTriXY();

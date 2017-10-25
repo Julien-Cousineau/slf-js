@@ -1,6 +1,6 @@
 {
   "name": "slf-js",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "JavaScript to read selafin files",
   "main": "src/slf.js",
   "directories": {
@@ -24,6 +24,7 @@
   },
   "homepage": "https://github.com/Julien-Cousineau/slf-js#readme",
   "dependencies": {
+    "proj4": "^2.4.4",
     "tape": "^4.8.0"
   }
 }
