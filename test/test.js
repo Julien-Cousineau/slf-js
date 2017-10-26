@@ -9,6 +9,7 @@ const values = require('../data/demo1.js');
 
 const filename_0 = './data/demo1.slf';
 const filename_1 = './data/mesh.1800.slf';
+const filename_2 = './data/mesh.1800.10.slf';
 
 // const filename_10 = '../data/demo1.slf';
 
@@ -38,17 +39,19 @@ t('Create Selafin object - Single Frame', function (t) {
     t.end();    
   });
 });
-// t('Create Selafin object - Single Frame', function (t) {
+t('Create Selafin object - Single Frame', function (t) {
 
-//   fs.readFile(filename_1, function(err, buffer) {
-//     if(err){throw Error(err)}
-//     let slf = new selafin(buffer,{fromProj:'EPSG:3159',toProj:'EPSG:4326',keepbuffer:1,debug:1});
-//     t.same(values.NELEM3,slf.NELEM3);
-//     t.same(values.NPOIN3,slf.NPOIN3);
-//     t.same(values.NFRAME,slf.NFRAME);
-//     t.end();    
-//   });
-// });
+  fs.readFile(filename_1, function(err, buffer) {
+    if(err){throw Error(err)}
+    let slf = new selafin(buffer,{fromProj:'EPSG:3156',toProj:'EPSG:4326',keepbuffer:1,debug:1});
+    let frames = slf.getELEMENTFRAME();
+    // console.log(frames);
+    // t.same(values.NELEM3,slf.NELEM3);
+    // t.same(values.NPOIN3,slf.NPOIN3);
+    // t.same(values.NFRAME,slf.NFRAME);
+    t.end();    
+  });
+});
 
 // t('Create Selafin object - Multiple Frame', function (t) {
 

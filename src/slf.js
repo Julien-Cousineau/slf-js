@@ -289,7 +289,7 @@ Selafin.prototype = {
       let index =indexes.indexOf(ivar);
       if(index!==-1){
         z.set(bufferpack.unpack(endian+(this.NPOIN3)+ftype,uint8array,pos),iindexes++ *this.NPOIN3);
-      } 
+      }
       pos +=fsize*this.NPOIN3;
       pos +=4;
     }
@@ -317,6 +317,7 @@ Selafin.prototype = {
     if (debug) console.time('Get element frame');
     let exy = this._TRIXY = new Float32Array(this.NELEM3*this.NDP3);
     const values = this.getFrame(frame,indexes);
+    // console.log(values)
     let n1,n2,n3;
     for(let i=0,j=0,n=this.NELEM3;i<n;i++,j+=3){
       n1 = this.IKLE3[i];
@@ -330,14 +331,19 @@ Selafin.prototype = {
     return exy;
   },
   getMinMax:function(){
-    let max = Number.MIN_VALUE;
-    let min = Number.MAX_VALUE;
-    for(let i=0;i<this.NFRAME;i++){
-      const values = this.getFrame(i);
-      min = Math.min(min,values.min());
-      max = Math.max(max,values.max());
+    let minmax = new Float32Array(this.NVAR * 2);
+    for(let ivar=0;ivar<this.NVAR;ivar++){
+      let max = Number.MIN_VALUE;
+      let min = Number.MAX_VALUE;
+      for(let i=0;i<this.NFRAME;i++){
+        const values = this.getFrame(i);
+        min = Math.min(min,values.min());
+        max = Math.max(max,values.max());
+      }
+      minmax[ivar*2] = min;
+      minmax[ivar*2+1] = max;
     }
-    return new Float32Array([min,max]);
+    return minmax;
   },
 
 
@@ -394,10 +400,8 @@ Selafin.prototype = {
     if(fromProj !== toProj){
       const transform = util.proj4(fromProj,toProj);
       let coord;
-      console.log(fromProj,toProj)
       for(let i=0;i<this.NPOIN3;i++){
         coord=transform.forward([this.MESHX[i],this.MESHY[i]]);
-        // console.log(coord)
         this.MESHX[i] = coord[0];
         this.MESHY[i] = coord[1];
       }
