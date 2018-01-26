@@ -52,6 +52,19 @@ t('Create Selafin object - Single Frame', function (t) {
     t.end();    
   });
 });
+t('Create Selafin object - Single Frame', function (t) {
+
+  fs.readFile(filename_1, function(err, buffer) {
+    if(err){throw Error(err)}
+    let slf = new selafin(buffer,{fromProj:'EPSG:3156',toProj:'EPSG:4326',keepbuffer:1,debug:1});
+    let frames = slf.getELEMENTFRAME();
+    // console.log(frames);
+    // t.same(values.NELEM3,slf.NELEM3);
+    // t.same(values.NPOIN3,slf.NPOIN3);
+    // t.same(values.NFRAME,slf.NFRAME);
+    t.end();    
+  });
+});
 
 // t('Create Selafin object - Multiple Frame', function (t) {
 

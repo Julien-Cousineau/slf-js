@@ -13,6 +13,9 @@ Empty
 ## Usage
 Empty
 
+## Compile
+browserify src/slf.js -o dist/slf-js.js
+
 ## Options
 Empty
 
