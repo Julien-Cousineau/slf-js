@@ -1,8 +1,9 @@
 'use strict';
 
-const bufferpack = require('./bufferpack');
-const util = require('./util');
-
+const Bufferpack = require('./bufferpack');
+const bufferpack = new Bufferpack();
+const proj =require('./proj')
+const { range } = require('@julien.cousineau/util')
 
 /**
  * Create Selafin Object - opentelemac.org
@@ -10,23 +11,19 @@ const util = require('./util');
  * @param {Object} options - Optional information
  * @returns {Object} Selafin - a Selafin object
  */
-function Selafin(buffer,options){
-  options = this.options = extend(Object.create(this.options), options);
+module.exports =  class Selafin{
+  constructor(buffer,options){
+  if(!options)options={};
+  this.fromProj = options.fromProj || 'EPSG:4326';
+  this.toProj = options.toProj || 'EPSG:4326';
+  this.keepbuffer = options.keepbuffer || 0;
+  this.debug = options.debug || 0;
   this.initialised(buffer);
+  }
 
-}
-
-Selafin.prototype = {
-    options: {
-    fromProj: 'EPSG:4326',
-    toProj:   'EPSG:4326',
-    keepbuffer: 0,          // kepp buffer in memory
-    debug: 0                // logging level (0, 1 or 2)
-  },
-
-  initialised:function(buffer){
-    let debug = this.options.debug;
-    let keepbuffer = this.options.keepbuffer;
+  initialised(buffer){
+    let debug = this.debug;
+    let keepbuffer = this.keepbuffer;
     if (debug) console.time('Initialised selafin object');
     
     // ~~> Convert buffer to uint8array
@@ -90,15 +87,15 @@ Selafin.prototype = {
       console.timeEnd('Initialised selafin object');
       console.log("NELEM:%d,NPOIN:%d,NFRAME:%d",this.NELEM3,this.NPOIN3,this.NFRAME);
     }
-  },
-  initializeProperties:function(){
+  }
+  initializeProperties(){
     // ~~> initialize dynamic properties
     this._TRIXY = null;
     this._TRIAREA = null;
     this._CX = null;
     this._CY = null;
-  },
-  getEndianFromChar:function(nchar){
+  }
+  getEndianFromChar(nchar){
     let uint8array =  this.uint8array;
     let endian = ">"; // "<" means little-endian, ">" means big-endian
     let l,c,chk;
@@ -111,8 +108,8 @@ Selafin.prototype = {
         throw Error('... Cannot read '+ nchar +' characters from your binary file +> Maybe it is the wrong file format ?');
     }
     return endian;
-  },
-  getHeaderMetaDataSLF:function(){
+  }
+  getHeaderMetaDataSLF(){
     let uint8array =  this.uint8array;
     let endian = this.file.endian;
     let l,chk;
@@ -124,7 +121,7 @@ Selafin.prototype = {
     [l,this.NBV1,this.NBV2,chk] = bufferpack.unpack(endian+'iiii',uint8array,pos); //
     pos+=4+8+4;
     this.NVAR = this.NBV1 + this.NBV2;
-    this.VARINDEX = util.range(this.NVAR,'8');
+    this.VARINDEX = range(this.NVAR,'Uint8Array');
     // ~~ Read variable names and units ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     this.VARNAMES = []; this.VARUNITS = [];
     for(let i=0;i<this.NBV1;i++){
@@ -156,8 +153,8 @@ Selafin.prototype = {
       this.DATETIME = d.slice(1, 9);
     }
     return pos;
-  },
-  getHeaderIntegersSLF:function(pos){
+  }
+  getHeaderIntegersSLF(pos){
     let uint8array =  this.uint8array;
     let endian = this.file.endian;
     let l,chk;
@@ -197,8 +194,8 @@ Selafin.prototype = {
     pos+=4;
     // this.IPOB2 = this.IPOB3.slice(0,this.NPOIN2);
     return pos;
-  },
-  getFloatTypeFromFloat:function(pos){
+  }
+  getFloatTypeFromFloat(pos){
     let uint8array =  this.uint8array;
     let endian = this.file.endian;
     let nfloat = this.NPOIN3;
@@ -218,8 +215,8 @@ Selafin.prototype = {
       throw Error('... Cannot read '+nfloat+' floats from your binary file +> Maybe it is the wrong file format ?');
     }
     return [cfloat,ifloat];          
-  },
-  getHeaderFloatsSLF:function(pos){
+  }
+  getHeaderFloatsSLF(pos){
       let uint8array =  this.uint8array;
       let endian = this.file.endian;
       let [ftype,fsize] = this.file.float;
@@ -234,8 +231,8 @@ Selafin.prototype = {
       pos +=fsize*this.NPOIN3;
       pos +=4;
       return pos;
-  },
-  getTimeHistorySLF:function(pos){
+  }
+  getTimeHistorySLF(pos){
     let uint8array =  this.uint8array;
     let endian = this.file.endian;
     let [ftype,fsize] = this.file.float;
@@ -259,28 +256,28 @@ Selafin.prototype = {
     }
     this.NFRAME = ATs.length;
     return { 'cores':ATt,'times':ATs};
-  },
+  }
 /**
  * Get Frame
  * @param {Integer} frame - Frame id
  * @param {Integer | Array} indexes - Indexes of variables
  * @returns {Float32Array} z - NPOIN Float32Array
  */  
-  getFrame:function(frame,indexes){
+  getFrame(frame,indexes){
     if(!(this.uint8array)) throw Error("uint8array is null. Add keepbuffer=1 in options"); 
     frame = (typeof frame !== 'undefined') ?  frame : 0;
     if (!(frame >= 0 && frame < this.NFRAME)) throw Error("Check frame id"); 
     indexes = (typeof indexes !== 'undefined') ?  indexes : 0;
     indexes = (Number.isInteger(indexes)) ? [indexes]:indexes;
-    indexes = (indexes.length == 0) ? util.range(this.NFRAME,'16'):indexes;
+    indexes = (indexes.length == 0) ? range(this.NFRAME,'Uint16Array'):indexes;
     
-    let debug = this.options.debug;
+ 
     let uint8array =  this.uint8array;
     let endian = this.file.endian;    
     let [ftype,fsize] = this.file.float;
     
     // ~~> get frame
-    if (debug) console.time('Get frame');
+    if (this.debug) console.time('Get frame');
     let z = new Float32Array(indexes.length * this.NPOIN3);
     
     let pos=this.tags['cores'][frame];
@@ -294,9 +291,9 @@ Selafin.prototype = {
       pos +=fsize*this.NPOIN3;
       pos +=4;
     }
-    if (debug) console.timeEnd('Get frame');
+    if (this.debug) console.timeEnd('Get frame');
     return z;
-  },
+  }
 //   /**
 // * Get Element Frame
 // * @param {Integer} frame - Frame id
@@ -306,7 +303,7 @@ Selafin.prototype = {
 //   getELEMENTFRAME:function(frame,indexes){
 //     if(!(this.uint8array)) throw Error("uint8array is null. Add keepbuffer=1 in options"); 
     
-//     let debug = this.options.debug;  
+//     let debug = this.debug;
     
 //     frame = (typeof frame !== 'undefined') ?  frame : 0;
 //     if (!(frame >= 0 && frame < this.NFRAME)) throw Error("Check frame id"); 
@@ -333,7 +330,7 @@ Selafin.prototype = {
 //   },
   
   
-  getMinMax:function(){
+  getMinMax(){
     let minmax = new Float32Array(this.NVAR * 2);
     for(let ivar=0;ivar<this.NVAR;ivar++){
       let max = Number.MIN_VALUE;
@@ -347,30 +344,30 @@ Selafin.prototype = {
       minmax[ivar*2+1] = max;
     }
     return minmax;
-  },
-  getVarMinMax:function(ivar){
+  }
+  getVarMinMax(ivar){
     return this.minmax.subarray(ivar*2,ivar*2+1);
-  },
-  getElement:function(indexes){
+  }
+  getElement(indexes){
     indexes = (Number.isInteger(indexes)) ? [indexes]:indexes;
     
     // ~~> get element
-    if (this.options.debug) console.time('Get elements');    
-    indexes = (typeof indexes !== 'undefined') ?  indexes : util.range(this.NELEM3,'32');
+    if (this.debug) console.time('Get elements');    
+    indexes = (typeof indexes !== 'undefined') ?  indexes : range(this.NELEM3,'Uint32Array');
     let elements = new Uint32Array(indexes.length*this.NDP3);
     for(let i=0,j=0,n=indexes.length;i<n;i++,j+=3){
       elements[j] = this.IKLE3[indexes[i]];
       elements[j+1] =this.IKLE3[indexes[i]+this.NELEM3];
       elements[j+2] =this.IKLE3[indexes[i]+2*this.NELEM3];
     }
-    if (this.options.debug) console.timeEnd('Get elements');    
+    if (this.debug) console.timeEnd('Get elements');    
     return elements;
-  },
+  }
   // getIndices:function(indexes){
   //   indexes = (Number.isInteger(indexes)) ? [indexes]:indexes;
     
   //   // ~~> get element
-  //   if (this.options.debug) console.time('Get elements');    
+  //   if (this.debug) console.time('Get elements');    
   //   indexes = (typeof indexes !== 'undefined') ?  indexes : util.range(this.NELEM3,'32');
   //   let elements = new Uint32Array(indexes.length*this.NDP3);
   //   for(let i=0,j=0,n=indexes.length;i<n;i++,j+=3){
@@ -378,10 +375,10 @@ Selafin.prototype = {
   //     elements[j+1] = 3*indexes[i]+1;
   //     elements[j+2] = 3*indexes[i]+2;
   //   }
-  //   if (this.options.debug) console.timeEnd('Get elements');    
+  //   if (this.debug) console.timeEnd('Get elements');    
   //   return elements;
   // },
-  reshapeIKLE:function(){
+  reshapeIKLE(){
     let newIKLE = new Uint32Array(this.NELEM3*this.NDP3);
     for(let i=0,j=0;i<this.NELEM3;i++,j+=3){
       newIKLE[i] =  this.IKLE3[j];
@@ -389,56 +386,64 @@ Selafin.prototype = {
       newIKLE[i+2*this.NELEM3] = this.IKLE3[j+2];
     }
     return newIKLE;
-  },
-  changeProj:function(from,to){
-    this.options.fromProj = from;
-    this.options.toProj = to;
+  }
+  changeProj(from,to){
+    this.fromProj = from;
+    this.toProj = to;
     if(from !== to){
       this.initializeProperties();
       this.transform();
     }
-  },
-  transform:function(){
-    const fromProj = this.options.fromProj;
-    const toProj = this.options.toProj;
+  }
+  transform(){
+    const fromProj = this.fromProj;
+    const toProj = this.toProj;
     if(fromProj !== toProj){
-      const transform = util.proj4(fromProj,toProj);
+      const transform = proj(fromProj,toProj);
       let coord;
       for(let i=0;i<this.NPOIN3;i++){
         coord=transform.forward([this.MESHX[i],this.MESHY[i]]);
         this.MESHX[i] = coord[0];
         this.MESHY[i] = coord[1];
       }
-      this.options.fromProj = toProj;
+      this.fromProj = toProj;
     }
-  },
+  }
   get TRIXY(){
     if (!(this._TRIXY)) this.getTriXY();
     return this._TRIXY;
-  },
+  }
   get XY(){
     if (!(this._XY)) this.getXY();
     return this._XY;
-  },
+  }
   get IKLEW(){
     if (!(this._IKLEW)) this.getIKLEW();
     return this._IKLEW;
-  },
+  }
   get CX(){
     if(!(this._CX)) this.getTriCentroid();
     return this._CX;
-  },
+  }
   get CY(){
     if (!(this._CY)) this.getTriCentroid();
     return this._CY;
-  },  
+  }
   get TRIAREA(){
     if (!(this._TRIAREA)) this.getTriArea();
     return this._TRIAREA;
-  },
-  getIKLEW:function(){
-    const debug = this.options.debug;
-    if (debug) console.time('Get connectivity for wireframe');
+  }
+  get EXTENT(){
+  if (!(this._EXTENT)) this._EXTENT= this.getExtent();
+    return this._EXTENT;
+  }
+  getExtent(){
+    return new Float32Array([this.MESHX.min(),this.MESHY.min(),this.MESHX.max(),this.MESHY.max()]);
+  }
+
+  
+  getIKLEW(){
+    if (this.debug) console.time('Get connectivity for wireframe');
     let IKLEW = this._IKLEW = new Uint32Array(this.NELEM3*this.NDP3*2);
     for(let i=0,j=0,k=0;i<this.NELEM3;i++,j+=6,k+=3){
       IKLEW[j] =  this.IKLE3F[k];
@@ -448,13 +453,12 @@ Selafin.prototype = {
       IKLEW[j+4] = this.IKLE3F[k+2];
       IKLEW[j+5] = this.IKLE3F[k];
     }
-    if (debug) console.timeEnd('Get connectivity for wireframe');
+    if (this.debug) console.timeEnd('Get connectivity for wireframe');
     
-  },
-  getTriXY:function(){
-    let debug = this.options.debug;
+  }
+  getTriXY(){
     // ~~> get element xy
-    if (debug) console.time('Get element xy');
+    if (this.debug) console.time('Get element xy');
     let exy = this._TRIXY = new Float32Array(this.NELEM3*this.NDP3*3);
     let n1,n2,n3;
     for(let i=0,j=0,n=this.NELEM3;i<n;i++,j+=9){
@@ -471,21 +475,21 @@ Selafin.prototype = {
       exy[j+7] = this.MESHY[n3];
       // z = 0.
     }
-    if (debug) console.timeEnd('Get element xy');
-  },
-  getXY:function(){
-    let debug = this.options.debug;
+    if (this.debug) console.timeEnd('Get element xy');
+  }
+  getXY(){
+    
     // ~~> get points
-    if (debug) console.time('Get points xy');
+    if (this.debug) console.time('Get points xy');
     let xy = this._XY = new Float32Array(this.NPOIN3*3);
     for(let i=0,j=0,n=this.NPOIN3;i<n;i++,j+=3){
       xy[j] = this.MESHX[i];
       xy[j+1] = this.MESHY[i];
     }
-    if (debug) console.timeEnd('Get points xy');    
-  },
-  getTriArea:function(){
-    if (this.options.debug) console.time('Get element area');
+    if (this.debug) console.timeEnd('Get points xy');    
+  }
+  getTriArea(){
+    if (this.debug) console.time('Get element area');
     // Area was compute using cross-product
     let area = this._TRIAREA = new Float32Array(this.NELEM3);
     let n1,n2,n3;
@@ -497,15 +501,15 @@ Selafin.prototype = {
                        (this.MESHX[n3] - this.MESHX[n1]) * (this.MESHY[n2] - this.MESHY[n1])
                       );
     }
-    if (this.options.debug) console.timeEnd('Get element area');
-  },
-  getTriCentroid:function(){
-    if (this.options.debug) console.time('Get element centroid');
+    if (this.debug) console.timeEnd('Get element area');
+  }
+  getTriCentroid(){
+    if (this.debug) console.time('Get element centroid');
     // Centoid was compute using mean of X and Y
     let CX = this._CX = new Float32Array(this.NELEM3);
     let CY = this._CY = new Float32Array(this.NELEM3);
-    let dummy = new Float32Array(1)
-    dummy[0] = 3.0 
+    let dummy = new Float32Array(1);
+    dummy[0] = 3.0 ;
     let n1,n2,n3;
     for(let i=0,n=this.NELEM3;i<n;i++){
       n1 = this.IKLE3[i];
@@ -517,13 +521,60 @@ Selafin.prototype = {
     n1 = this.IKLE3[0];
     n2 = this.IKLE3[0+this.NELEM3];
     n3 = this.IKLE3[0+2*this.NELEM3];
-    if (this.options.debug) console.timeEnd('Get element centroid');
-  },  
-};
+    if (this.debug) console.timeEnd('Get element centroid');
+  }
+  
+  //{STRING} title  
+  addTITLE(title){
+    this.TITLE = '{0}'.format(title.rpad(" ", 80));
+  }
 
-function extend(dest, src) {
-    for (var i in src) dest[i] = src[i];
-    return dest;
+  //{OBJECT (name:str,unit:str)}
+  addVAR(obj){
+    if(!obj)obj={};
+    const name = obj.name || 'NewVariable';
+    const unit = obj.unit || 'NewUnit';
+    this.NBV1 += 1
+    this.NVAR = this.NBV1 + this.NBV2
+    this.VARINDEX = range(this.NVAR)
+    this.VARNAMES.push('{0}'.format(name.rpad(" ", 16))); 
+    this.VARUNITS.push('{0}'.format(unit.rpad(" ", 16))); 
+  }
+  
+  // [{x:0,y:0}]  
+   addPOIN(points){
+    if(!points) throw new Error("Requires points")
+    this.IPOB2 = range(points.length)
+    this.IPOB3 = this.IPOB2;
+    this.IPARAM = new Uint8Array(10);
+    this.IPARAM[0] = 1;
+    this.NPOIN2 = points.length;
+    this.NPOIN3 =this.NPOIN2;
+    this.MESHX = points.map(row=>row.x);
+    this.MESHY = points.map(row=>row.y);
+   }
+   
+  //Uint32Array(NELEM3*NDP3
+  addIKLE(ikle){
+    this.NDP2 = 3
+    this.NDP3 = 3
+    this.NELEM2 = ikle.length
+    this.NELEM3 = this.NELEM2
+    this.IKLE2 = ikle
+    this.IKLE3 = ikle 
+  }
+
+  printAttributes(){
+    const attr = {
+      'NFRAME':this.NFRAME,
+      'NVAR':this.NVAR,
+      'NPOIN3':this.NPOIN3,
+      'NELEM3':this.NELEM3,
+      'EXTENT':this.EXTENT,
+    }
+    console.log(attr)
+  }
+  
 }
 
-module.exports = Selafin;
+

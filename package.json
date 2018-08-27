@@ -7,6 +7,7 @@
     "test": "test"
   },
   "scripts": {
+    "demo": "node demo/index.js",
     "test": "node test/test.js"
   },
   "repository": {
@@ -24,7 +25,12 @@
   },
   "homepage": "https://github.com/Julien-Cousineau/slf-js#readme",
   "dependencies": {
+    "@julien.cousineau/util": "^1.0.7",
     "proj4": "^2.4.4",
     "tape": "^4.8.0"
+  },
+  "devDependencies": {
+    "webpack": "^4.17.1",
+    "webpack-dev-server": "^3.1.5"
   }
 }

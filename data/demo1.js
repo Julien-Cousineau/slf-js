@@ -2,6 +2,7 @@ exports.NELEM3=800;
 exports.NPOIN3=441;
 exports.NFRAME=1;
 exports.NFRAME10=10;
+exports.EXTENT =new Float32Array([-1,-1,1,1]);
 exports.MESHX=new Float32Array([-1. , -0.9, -0.8, -0.7, -0.6, -0.5, -0.4, -0.3, -0.2, -0.1, -0. ,  0.1,
   0.2,  0.3,  0.4,  0.5,  0.6,  0.7,  0.8,  0.9,  1. , -1. , -0.9, -0.8,
  -0.7, -0.6, -0.5, -0.4, -0.3, -0.2, -0.1, -0. ,  0.1,  0.2,  0.3,  0.4,

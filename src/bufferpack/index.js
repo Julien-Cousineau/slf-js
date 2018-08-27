@@ -4,7 +4,7 @@
  */
 
 // Utility object:  Encode/Decode C-style binary primitives to/from octet arrays
-function BufferPack() {
+module.exports =  function ()  {
   // Module-level (private) variables
   var el,  bBE = false, m = this;
 
@@ -216,5 +216,3 @@ function BufferPack() {
     }
   };
 };
-
-module.exports = new BufferPack();
