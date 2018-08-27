@@ -1,6 +1,6 @@
 {
   "name": "slf-js",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "JavaScript to read selafin files",
   "main": "src/index.js",
   "directories": {
@@ -8,7 +8,10 @@
   },
   "scripts": {
     "demo": "node demo/index.js",
-    "test": "node test/test.js"
+    "test": "node test/test.js",
+    "patch": "npm version patch && npm publish --access=public",
+    "minor": "npm version minor && npm publish --access=public",
+    "major": "npm version major && npm publish --access=public"
   },
   "repository": {
     "type": "git",
