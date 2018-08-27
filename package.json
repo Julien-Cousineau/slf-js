@@ -2,7 +2,7 @@
   "name": "slf-js",
   "version": "0.0.3",
   "description": "JavaScript to read selafin files",
-  "main": "src/slf.js",
+  "main": "src/index.js",
   "directories": {
     "test": "test"
   },
