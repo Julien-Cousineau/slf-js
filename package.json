@@ -1,14 +1,20 @@
 {
   "name": "slf-js",
   "version": "0.0.4",
-  "description": "JavaScript to read selafin files",
-  "main": "src/index.js",
+  "description": "Selafin file reader and writter (OpenTelemac)",
+  "module": "src/index.js",
+  "main": "build/slf.js",
+  "jsdelivr": "build/slf.min.js",
+  "unpkg": "build/slf.min.js",
   "directories": {
     "test": "test"
   },
   "scripts": {
-    "demo": "node demo/index.js",
-    "test": "node test/test.js",
+    "build": "rollup -c",
+    "pretest": "eslint --fix src test/test.js rollup.config.js",
+    "prepare": "npm run build",
+    "test": "tape -r esm test/test.js | faucet",
+    "push": "git add . && git commit -m 'comment here' && git push -u origin master",
     "patch": "npm version patch && npm publish --access=public",
     "minor": "npm version minor && npm publish --access=public",
     "major": "npm version major && npm publish --access=public"
@@ -28,12 +34,29 @@
   },
   "homepage": "https://github.com/Julien-Cousineau/slf-js#readme",
   "dependencies": {
-    "@julien.cousineau/util": "^1.0.7",
+    "@julien.cousineau/util": "^1.0.14",
+    "@mapbox/tile-cover": "^3.0.2",
+    "@mapbox/tilebelt": "^1.0.1",
+    "@turf/area": "^6.0.1",
+    "@turf/bbox-polygon": "^6.0.1",
+    "@turf/helpers": "^6.1.4",
+    "@turf/mask": "^5.1.5",
+    "eslint": "^5.9.0",
+    "faucet": "0.0.1",
+    "martinez-polygon-clipping": "^0.5.0",
     "proj4": "^2.4.4",
+    "rbush": "^2.0.2",
     "tape": "^4.8.0"
   },
   "devDependencies": {
-    "webpack": "^4.17.1",
-    "webpack-dev-server": "^3.1.5"
+    "@babel/core": "^7.1.5",
+    "@babel/node": "^7.0.0",
+    "@babel/preset-env": "^7.1.5",
+    "eslint-config-mourner": "^3.0.0",
+    "esm": "^3.0.82",
+    "rollup": "^0.65.2",
+    "rollup-plugin-buble": "^0.19.2",
+    "rollup-plugin-terser": "^2.0.2",
+    "tape": "^4.9.1"
   }
 }
