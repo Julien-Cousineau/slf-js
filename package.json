@@ -1,6 +1,6 @@
 {
   "name": "slf-js",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "Selafin file reader and writter (OpenTelemac)",
   "module": "src/index.js",
   "main": "build/slf.js",
