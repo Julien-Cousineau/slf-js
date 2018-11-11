@@ -22,11 +22,11 @@ import { range } from '@julien.cousineau/util';
 export default class Selafin{
     constructor(buffer,options){
         if(!options)options={};
+        this.debug = options.debug || false;
         this.fromProj = options.fromProj || 'EPSG:4326';
         this.toProj = options.toProj || 'EPSG:4326';
-        // this.keepbuffer = options.keepbuffer || 0;
         this.keepframes = (typeof options.keepframes==='undefined')?true:options.keepframes;
-        this.debug = options.debug || 0;
+        
         (buffer)?this.initialised(buffer):this.initialisedBlank();
     }
     initialisedBlank(){
