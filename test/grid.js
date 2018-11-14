@@ -1,10 +1,10 @@
 // Create simple grid
 export default function(options){
   options=options || {};
-  const xmin = options.xmin || 0;
-  const xmax = options.xmax || 10;
-  const ymin = options.ymin || 0;
-  const ymax = options.ymax || 10;
+  const xmin = (typeof options.xmin==='undefined')?-1:options.xmin;
+  const xmax = (typeof options.xmax==='undefined')?1:options.xmax;
+  const ymin = (typeof options.ymin==='undefined')?-1:options.ymin;
+  const ymax = (typeof options.ymax==='undefined')?1:options.ymax;
   const xstep = options.xstep || 1;
   const ystep = options.ystep || 1;
   
@@ -43,5 +43,4 @@ export default function(options){
     }
   }
   return [x,y,ikle];
-
 }
