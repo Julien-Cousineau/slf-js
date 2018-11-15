@@ -3,7 +3,7 @@
   "version": "0.0.6",
   "description": "Selafin file reader and writter (OpenTelemac)",
   "module": "src/index.js",
-  "main": "build/slf.js",
+  "main": "src/index.js",
   "jsdelivr": "build/slf.min.js",
   "unpkg": "build/slf.min.js",
   "directories": {
