@@ -3,15 +3,13 @@
 import bufferpack from './bufferpack.js';
 
 import proj from './proj4.js';
-import {polygon,featureCollection} from '@turf/helpers';
+import {polygon as turf_polygon,featureCollection} from '@turf/helpers';
 import area from '@turf/area';
 import mask from '@turf/mask';
 import { range } from '@julien.cousineau/util';
 
-
-// const bufferpack = new _bufferpack();
-
-
+const RADIUS = 6378137;
+const rad = function(num) {return num * Math.PI / 180.0;};
 
 /**
  * Create Selafin Object - opentelemac.org
@@ -545,25 +543,23 @@ export default class Selafin{
         return this._POLYGON;
     }
     get EXTERIOR(){
-        if (!(this._EXTERIOR))this.getExterior();
+        if (!(this._EXTERIOR))this.getExtInt();
         return this._EXTERIOR;
     }
     get INTERIORS(){
-        if (!(this._INTERIORS))this.getExterior();
+        if (!(this._INTERIORS))this.getExtInt();
         return this._INTERIORS;
     }  
     get POLYGONS(){ 
         if (!(this._POLYGONS))this.getPolygons();
         return this._POLYGONS;
     }
-
-  
     getExtent(){
         if (this.debug) console.time('Get extent');
         this._EXTENT=new Float32Array([this.MESHX.min(),this.MESHY.min(),this.MESHX.max(),this.MESHY.max()]);
         if (this.debug) console.timeEnd('Get extent');
     }
-    getExterior(){
+    getExtInt(){
         if (this.debug) console.time('Get exterior/interiors');
         const polygons = this.POLYGONS;
         const areas = polygons.map(pol=>area(pol));
@@ -579,6 +575,7 @@ export default class Selafin{
         if (this.debug) console.timeEnd('Get polygon');
     }
     getPolygons(){
+        // ~~> get outlines (boundary edges)/polygons
         if (this.debug) console.time('Get polygons');
         const bedges=this.BEDGES;
         const pols =this._POLYGONS= [];
@@ -586,7 +583,7 @@ export default class Selafin{
         while(bedges.length>0){
             index=bedges.findIndex(item=>item.start==end || item.end==end);
             if(index==-1){
-                if(pol.length>0){pols.push(polygon([pol]));pol=[];}
+                if(pol.length>0){pols.push(turf_polygon([pol]));pol=[];}
                 start=bedges[0].start;
                 end=bedges[0].end;
                 pol.push(this.getCoordinate(start));
@@ -596,12 +593,11 @@ export default class Selafin{
                 end=(bedges[index].start==end)?bedges[index].end:bedges[index].start;
                 pol.push(this.getCoordinate(end));
                 bedges.splice(index,1);
-                if(bedges.length==0 && pol.length>0)pols.push(polygon([pol]));
+                if(bedges.length==0 && pol.length>0)pols.push(turf_polygon([pol]));
             }
         }
         if (this.debug) console.timeEnd('Get polygons');
     }
-  
     getIKLEW(){
         if (this.debug) console.time('Get connectivity for wireframe');
         let IKLEW = this._IKLEW = new Uint32Array(this.NELEM3*this.NDP3*2);
@@ -637,29 +633,32 @@ export default class Selafin{
         if (this.debug) console.timeEnd('Get element xy');
     }
     getXY(){
-    
-        // ~~> get points
+        // ~~> get points (x,y)
         if (this.debug) console.time('Get points xy');
         let xy = this._XY = new Float32Array(this.NPOIN3*3);
         for(let i=0,j=0,n=this.NPOIN3;i<n;i++,j+=3){
             xy[j] = this.MESHX[i];
             xy[j+1] = this.MESHY[i];
+            // xy[j+2] = this.MESHZ[i];
         }
         if (this.debug) console.timeEnd('Get points xy');
     }
     getBEDGES(){
-        if (this.debug) console.time('Get bedges');
+        // ~~> get exterior edges
+        if (this.debug) console.time('Get boundary edges');
         const edges = this.EDGES;
         this._BEDGES = Object.keys(edges).filter(key=>!edges[key].boundary).map(key=>edges[key]);
-        if (this.debug) console.timeEnd('Get bedges');
+        if (this.debug) console.timeEnd('Get boundary edges');
     }
     getIEDGES(){
-        if (this.debug) console.time('Get iedges');
+        // ~~> get interior edges
+        if (this.debug) console.time('Get interior edges');
         const edges = this.EDGES;
         this._IEDGES = Object.keys(edges).filter(key=>edges[key].boundary).map(key=>edges[key]);
-        if (this.debug) console.timeEnd('Get iedges');
+        if (this.debug) console.timeEnd('Get interior edges');
     }  
     getEDGES(){
+        // ~~> get edges
         if (this.debug) console.time('Get edges');
         const edges = this._EDGES = {};
         let n1,n2,n3,_n1,_n2,_n3;
@@ -678,7 +677,6 @@ export default class Selafin{
         }
         if (this.debug) console.timeEnd('Get edges');
     }
-
     getTriAttributes(){
         if (this.debug) console.time('Get element attributes');
         // Centroid is computed using mean of X and Y
@@ -705,9 +703,22 @@ export default class Selafin{
             // TODO : Assume cartesian coordinate system. 
             //        If using lat/long, areas might be misleading for large elements (several kilometers).
             //        I'm not sure if there's an easy solution. I've seen ajustment for different latitudes (mourne wind map)
-            area[i] = Math.abs(0.5 * ((this.MESHX[n2] - this.MESHX[n1]) * (this.MESHY[n3] - this.MESHY[n1]) - 
-                       (this.MESHX[n3] - this.MESHX[n1]) * (this.MESHY[n2] - this.MESHY[n1])
-            ));
+            // area[i] = Math.abs(0.5 * ((this.MESHX[n2] - this.MESHX[n1]) * (this.MESHY[n3] - this.MESHY[n1]) - 
+            //           (this.MESHX[n3] - this.MESHX[n1]) * (this.MESHY[n2] - this.MESHY[n1])
+            // ));
+            // https://github.com/Turfjs/turf/tree/master/packages/turf-area
+            const points = [
+                [this.MESHX[n1],this.MESHY[n1]],
+                [this.MESHX[n2],this.MESHY[n2]],
+                [this.MESHX[n3],this.MESHY[n3]]
+            ];
+            let total = 0.0;
+            total += (rad(points[2][0]) - rad(points[0][0])) * Math.sin(rad(points[1][1]));
+            total += (rad(points[1][0]) - rad(points[2][0])) * Math.sin(rad(points[0][1]));
+            total += (rad(points[0][0]) - rad(points[1][0])) * Math.sin(rad(points[2][1]));
+            area[i] = total * RADIUS * RADIUS * 0.5;
+            
+            
         }
         if (this.debug) console.timeEnd('Get element attributes');
     }

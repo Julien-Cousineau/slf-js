@@ -7,7 +7,7 @@ import { range } from '@julien.cousineau/util';
 import Selafin from './selafin.js';
 export default class SelafinMP extends Selafin{
     constructor(buffer,options){
-        options.toProj = 'EPSG:3857';
+        options.toProj = 'EPSG:4326';
         super(buffer,options);
         this.tileLimits = options.tileLimits || {min_zoom: 1,max_zoom: 12};
         this.eLimit = options.eLimit || 50000;
