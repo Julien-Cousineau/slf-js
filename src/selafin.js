@@ -1,12 +1,9 @@
 // 'use strict';
-
 import bufferpack from './bufferpack.js';
-
-import proj from './proj4.js';
+import { range } from './utils';
 import {polygon as turf_polygon,featureCollection} from '@turf/helpers';
 import area from '@turf/area';
 import mask from '@turf/mask';
-import { range } from '@julien.cousineau/util';
 
 const RADIUS = 6378137;
 const rad = function(num) {return num * Math.PI / 180.0;};
@@ -21,8 +18,6 @@ export default class Selafin{
     constructor(buffer,options){
         if(!options)options={};
         this.debug = options.debug || false;
-        this.fromProj = options.fromProj || 'EPSG:4326';
-        this.toProj = options.toProj || 'EPSG:4326';
         this.keepframes = (typeof options.keepframes==='undefined')?true:options.keepframes;
         
         (buffer)?this.initialised(buffer):this.initialisedBlank();
@@ -86,16 +81,9 @@ export default class Selafin{
         this.tags =this.getTimeHistorySLF(posTS);
         if (debug) console.timeEnd('Get frame tags');
     
-    
-    
         // ~~> keeping buffer?
         // if (!(keepbuffer)) this.uint8array = null;
         if(this.keepframes)this.getFrames();
-    
-        // ~~> transform xy mesh
-        if (debug) console.time('Transform mesh XY');
-        this.transform();
-        if (debug) console.timeEnd('Transform mesh XY');
     
         // ~~> min/max values
         // if (debug) console.time('Get min/max');
@@ -103,7 +91,6 @@ export default class Selafin{
         // if (debug) console.timeEnd('Get min/max');
     
         this.initializeProperties();
-
     
         if (debug) {
             console.timeEnd('Initialised selafin object');
@@ -318,7 +305,7 @@ export default class Selafin{
         // ~~ Write the IKLE array ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     
         buffer=Buffer.concat([buffer,bufferpack.pack(endian+'i',[4*this.NELEM3*this.NDP3])]);
-        buffer=Buffer.concat([buffer,bufferpack.pack(endian+'{0}i'.format(this.NELEM3*this.NDP3),this.IKLE3F.add(1))]); // TODO change IKLEF to IKLE ; index to id;
+        buffer=Buffer.concat([buffer,bufferpack.pack(endian+`${this.NELEM3*this.NDP3}i`,this.IKLE3F.add(1))]); // TODO change IKLEF to IKLE ; index to id;
         buffer=Buffer.concat([buffer,bufferpack.pack(endian+'i',[4*this.NELEM3*this.NDP3])]);
         // ~~ Write the IPOBO array ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         buffer=Buffer.concat([buffer,bufferpack.pack(endian+'i',[4*this.NPOIN3])]);
@@ -393,7 +380,7 @@ export default class Selafin{
         } 
         t = (typeof t !== 'undefined') ?  t : 0;
         v = (typeof v !== 'undefined') ?  v : 0;
-        if (!(t >= 0 && t < this.NFRAME)) throw Error("Check frame({0}) id={1} ".format(this.NFRAME,t)); 
+        if (!(t >= 0 && t < this.NFRAME)) throw Error(`Check frame(${this.NFRAME}) id=${t} `); 
         if (!(v >= 0 && v < this.NVAR)) throw Error("Check variable id");
     
         return this.FRAMES.subarray((t * this.NVAR * this.NPOIN3)+(v * this.NPOIN3),(t * this.NVAR * this.NPOIN3)+(v * this.NPOIN3)+this.NPOIN3);
@@ -462,28 +449,6 @@ export default class Selafin{
         }
         return newIKLE;
     }
-    changeProj(from,to){
-        this.fromProj = from;
-        this.toProj = to;
-        if(from !== to){
-            this.initializeProperties();
-            this.transform();
-        }
-    }
-    transform(){
-        const fromProj = this.fromProj;
-        const toProj = this.toProj;
-        if(fromProj !== toProj){
-            const transform = proj(fromProj,toProj);
-            let coord;
-            for(let i=0;i<this.NPOIN3;i++){
-                coord=transform.forward([this.MESHX[i],this.MESHY[i]]);
-                this.MESHX[i] = coord[0];
-                this.MESHY[i] = coord[1];
-            }
-            this.fromProj = toProj;
-        }
-    }
     get TRIXY(){
         if (!(this._TRIXY)) this.getTriXY();
         return this._TRIXY;
@@ -491,9 +456,9 @@ export default class Selafin{
     get varnames(){
         return this.VARNAMES.map(name=>name.replace(/\s/g, '').toLowerCase());
     }  
-    getVarIndex(id){return this.varnames.findIndex(name=>name==id);}
-
-
+    getVarIndex(id){
+        return this.varnames.findIndex(name=>name==id);
+    }
     get XY(){
         if (!(this._XY)) this.getXY();
         return this._XY;
@@ -514,7 +479,6 @@ export default class Selafin{
         if (!(this._IEDGES)) this.getIEDGES();
         return this._IEDGES;
     }
-  
     get CX(){
         if(!(this._CX)) this.getTriAttributes();
         return this._CX;
@@ -531,9 +495,9 @@ export default class Selafin{
         if (!(this._TRIBBOX)) this.getTriAttributes();
         return this._TRIBBOX;
     }
-  
-
-    get BBOX(){return this.EXTENT;}
+    get BBOX(){
+        return this.EXTENT;
+    }
     get EXTENT(){
         if (!(this._EXTENT))this.getExtent();
         return this._EXTENT;
@@ -567,7 +531,9 @@ export default class Selafin{
         this._EXTERIOR= interiors.shift();
         if (this.debug) console.timeEnd('Get exterior/interiors');
     }
-    getCoordinate(i){return [this.MESHX[i],this.MESHY[i]];}
+    getCoordinate(i){
+        return [this.MESHX[i],this.MESHY[i]];
+    }
     getPolygon(){
         if (this.debug) console.time('Get polygon');
         if(this.INTERIORS.length==0){this._POLYGON =this.EXTERIOR;}
@@ -668,9 +634,10 @@ export default class Selafin{
             n2 = this.IKLE3[e+this.NELEM3];
             n3 = this.IKLE3[e+2*this.NELEM3];
       
-            _n1 = '{0}-{1}'.format(Math.min(n1,n2),Math.max(n1,n2));
-            _n2 = '{0}-{1}'.format(Math.min(n2,n3),Math.max(n2,n3));
-            _n3 = '{0}-{1}'.format(Math.min(n3,n1),Math.max(n3,n1));
+            _n1 = `${Math.min(n1,n2)}-${Math.max(n1,n2)}`;
+            _n2 = `${Math.min(n2,n3)}-${Math.max(n2,n3)}`;
+            _n3 = `${Math.min(n3,n1)}-${Math.max(n3,n1)}`;
+            
             (typeof edges[_n1]!=='undefined')?edges[_n1].boundary=true:edges[_n1]={boundary:false,start:Math.min(n1,n2),end:Math.max(n1,n2)}; 
             (typeof edges[_n2]!=='undefined')?edges[_n2].boundary=true:edges[_n2]={boundary:false,start:Math.min(n2,n3),end:Math.max(n2,n3)};
             (typeof edges[_n3]!=='undefined')?edges[_n3].boundary=true:edges[_n3]={boundary:false,start:Math.min(n3,n1),end:Math.max(n3,n1)};
@@ -725,7 +692,7 @@ export default class Selafin{
   
     //{STRING} title  
     addTITLE(title){
-        this.TITLE = '{0}'.format(title.rpad(" ", 80));
+        this.TITLE = `${title.rpad(" ", 80)}`;
     }
 
     //{OBJECT (name:str,unit:str)}
@@ -736,8 +703,8 @@ export default class Selafin{
         this.NBV1 += 1;
         this.NVAR = this.NBV1 + this.NBV2;
         this.VARINDEX = range(this.NVAR);
-        this.VARNAMES.push('{0}'.format(name.rpad(" ", 16))); 
-        this.VARUNITS.push('{0}'.format(unit.rpad(" ", 16))); 
+        this.VARNAMES.push(`${name.rpad(" ", 16)}`); 
+        this.VARUNITS.push(`${unit.rpad(" ", 16)}`); 
     }
   
    

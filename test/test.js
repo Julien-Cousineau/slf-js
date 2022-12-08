@@ -1,28 +1,15 @@
 import t from 'tape';
 import fs from 'fs';
-import turf_area from '@turf/area';
-import {polygon as turf_polygon,featureCollection} from '@turf/helpers';
-// const fs = require('fs');
-
-// const Selafin =require('../src');
-import {Selafin,
-// SelafinGL,
-    SelafinMP} from '../src';
+import Selafin from '../src';
+// import grid from './grid.js';
 
 const values = require('../data/demo1.js');
-
-import grid from './grid.js';
-
-var polygon = turf_polygon([[[-1, -1], [-1, -0.9], [-0.9, -1], [-1, -1]]]);
-var area = new Float32Array([turf_area(polygon)]);
-console.log(area)
-
 
 t('Testing Selafin', function (t) {
     const filename_0 = './data/demo1.slf';
     fs.readFile(filename_0,  function(err, buffer) {
         if(err){throw Error(err);}
-        let slf = new SelafinMP(buffer,{keepframes:true,debug:1});
+        let slf = new Selafin(buffer,{keepframes:true,debug:1});
         t.same(values.NELEM3,slf.NELEM3);
         t.same(values.NPOIN3,slf.NPOIN3);
         t.same(values.NFRAME,slf.NFRAME);
@@ -31,8 +18,9 @@ t('Testing Selafin', function (t) {
         t.same(values.ELEMENTS,slf.getElements());
         t.same(values.TRIXY.compare(slf.TRIXY),true);
         // console.log(slf.TRIBBOX)
-        console.log(slf.TRIAREA);
-        // t.same(values.XY.compare(slf.XY),true);
+        // console.log(slf.TRIAREA);
+        
+        
         // t.same(values.IKLEW.compare(slf.IKLEW),true);
         // t.same(values.IKLEW.compare(slf.IKLEW),true);
         // t.same(values.TRIAREA.compare(slf.TRIAREA),true);
@@ -43,11 +31,8 @@ t('Testing Selafin', function (t) {
         t.same(values.CY.compare(slf.CY),true);
         t.same(values.EXTENT.compare(slf.EXTENT),true);
         t.same(values.POLYGONS.compare(slf.POLYGONS),true);
-        
-        
         t.end();    
     });
-  
 });
 
 // t('Testing Selafin - Writting Single Frame/Variable', async function (t) {
@@ -123,25 +108,25 @@ t('Testing Selafin', function (t) {
 // console.log(slf.getTile('3'));
 memoryUsage();
 
-t('Testing SelafinMP', async function (t) {
-    // const filename = './data/testingslf.multiple.slf';
+// t('Testing SelafinMP', async function (t) {
+//     // const filename = './data/testingslf.multiple.slf';
   
-    // const slf = new SelafinMP(null,{keepframes:true,debug:1});
-    // const [x,y,ikle]=grid();
-    // slf.addTITLE("Grid - Test2");
-    // slf.addVAR({'name':'BOTTOM','unit':'m'});
-    // slf.addPOINTS(x,y);
-    // slf.addIKLE(ikle);
-    // const frame1=new Float32Array(slf.NVAR * slf.NPOIN3);
-    // for(let i=0;i<frame1.length;i++)frame1[i]= parseFloat(i) / frame1.length;
-    // slf.addFrame(frame1);
-    // console.log(slf.TILES);
+//     // const slf = new SelafinMP(null,{keepframes:true,debug:1});
+//     // const [x,y,ikle]=grid();
+//     // slf.addTITLE("Grid - Test2");
+//     // slf.addVAR({'name':'BOTTOM','unit':'m'});
+//     // slf.addPOINTS(x,y);
+//     // slf.addIKLE(ikle);
+//     // const frame1=new Float32Array(slf.NVAR * slf.NPOIN3);
+//     // for(let i=0;i<frame1.length;i++)frame1[i]= parseFloat(i) / frame1.length;
+//     // slf.addFrame(frame1);
+//     // console.log(slf.TILES);
   
   
   
-    t.end();
-});
-memoryUsage();
+//     t.end();
+// });
+// memoryUsage();
 
 
 function memoryUsage(){

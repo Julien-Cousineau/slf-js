@@ -3,14 +3,14 @@
   "version": "0.0.7",
   "description": "Selafin file reader and writter (OpenTelemac)",
   "module": "src/index.js",
-  "main": "build/slf-js.js",
-  "jsdelivr": "build/slf.min.js",
-  "unpkg": "build/slf.min.js",
+  "main": "slf.js",
+  "jsdelivr": "slf.min.js",
+  "unpkg": "slf.min.js",
   "directories": {
     "test": "test"
   },
   "scripts": {
-    "build": "webpack --mode production --display-modules",
+    "build": "rollup -c",
     "pretest": "eslint --fix src test/test.js",
     "prepare": "npm run test",
     "test": "tape -r esm test/test.js | faucet",
@@ -35,27 +35,23 @@
   },
   "homepage": "https://github.com/Julien-Cousineau/slf-js#readme",
   "dependencies": {
-    "@julien.cousineau/util": "^1.0.14",
-    "@mapbox/tile-cover": "^3.0.2",
-    "@mapbox/tilebelt": "^1.0.1",
-    "@turf/area": "^6.0.1",
-    "@turf/bbox-polygon": "^6.0.1",
-    "@turf/helpers": "^6.1.4",
-    "@turf/mask": "^5.1.5",
-    "eslint": "^5.9.0",
-    "faucet": "0.0.1",
+    "@turf/area": "^6.5.0",
+    "@turf/bbox-polygon": "^6.5.0",
+    "@turf/helpers": "^6.5.0",
+    "@turf/mask": "^6.5.0",
     "martinez-polygon-clipping": "^0.5.0",
-    "proj4": "^2.4.4",
-    "rbush": "^2.0.2"
+    "rbush": "^3.0.1"
   },
   "devDependencies": {
-    "@babel/core": "^7.1.5",
-    "@babel/node": "^7.0.0",
-    "@babel/preset-env": "^7.1.5",
+    "@rollup/plugin-buble": "^0.21.1",
+    "@rollup/plugin-commonjs": "^23.0.4",
+    "@rollup/plugin-node-resolve": "^13.3.0",
+    "eslint": "^5.9.0",
     "eslint-config-mourner": "^3.0.0",
     "esm": "^3.0.82",
-    "tape": "^4.9.1",
-    "webpack": "^4.25.1",
-    "webpack-cli": "^3.1.2"
+    "faucet": "^0.0.3",
+    "rollup": "^2.2.0",
+    "rollup-plugin-terser": "^5.3.0",
+    "tape": "^4.13.2"
   }
 }

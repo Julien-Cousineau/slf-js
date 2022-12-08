@@ -2,7 +2,7 @@ import rbush from 'rbush';
 import cover from '@mapbox/tile-cover';
 import tilebelt from '@mapbox/tilebelt';
 import bboxPolygon from '@turf/bbox-polygon';
-import { range } from '@julien.cousineau/util';
+import { range } from './utils';
 
 import Selafin from './selafin.js';
 export default class SelafinMP extends Selafin{
