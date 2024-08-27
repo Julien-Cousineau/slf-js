@@ -372,20 +372,24 @@ export default class Selafin{
             }
         }
     }
-   
+    
     getFrame(t,v){ 
         if(!this.FRAMES){
             console.warn("this.FRAMES is null. Add keepframes=true in options"); 
             return null;
-        } 
+        }
+        if(typeof value !== 'number'){
+            const {iFrame,vName,vIndex}=t;
+            t=iFrame;
+            v=vIndex||(vName &&this.getVarIndex(vName));
+        }
         t = (typeof t !== 'undefined') ?  t : 0;
         v = (typeof v !== 'undefined') ?  v : 0;
+        
         if (!(t >= 0 && t < this.NFRAME)) throw Error(`Check frame(${this.NFRAME}) id=${t} `); 
         if (!(v >= 0 && v < this.NVAR)) throw Error("Check variable id");
-    
         return this.FRAMES.subarray((t * this.NVAR * this.NPOIN3)+(v * this.NPOIN3),(t * this.NVAR * this.NPOIN3)+(v * this.NPOIN3)+this.NPOIN3);
     }
-
 
     getMinMax(){
         let minmax = new Float32Array(this.NVAR * 2);
@@ -459,6 +463,27 @@ export default class Selafin{
     getVarIndex(id){
         return this.varnames.findIndex(name=>name==id);
     }
+    get wireframe(){
+        const xy     = this.xy;  
+        const edges  = this.EDGES;  
+        const keys   = Object.keys(edges);
+        const n      = keys.length;
+        const source = new Float32Array(n*2);
+        const target = new Float32Array(n*2);
+        const edgeType = new Uint8Array(n);
+        let key;
+        for(let i= 0; i < n; i++){
+            key = keys[i];
+            const isInside=edges[key].e2?1:0;
+            source.set(xy.subarray(edges[key].start*2,edges[key].start*2+2),i*2);
+            target.set(xy.subarray(edges[key].end*2,edges[key].end*2+2),i*2);
+            edgeType.set([isInside],i);
+        }
+        return {source,target,edgeType};
+    }
+    get xy(){return this.XY;}
+    get elem(){return this.IKLE3F;}
+    get npoin(){return this.NPOIN3;}
     get XY(){
         if (!(this._XY)) this.getXY();
         return this._XY;
@@ -601,8 +626,8 @@ export default class Selafin{
     getXY(){
         // ~~> get points (x,y)
         if (this.debug) console.time('Get points xy');
-        let xy = this._XY = new Float32Array(this.NPOIN3*3);
-        for(let i=0,j=0,n=this.NPOIN3;i<n;i++,j+=3){
+        let xy = this._XY = new Float32Array(this.NPOIN3*2);
+        for(let i=0,j=0,n=this.NPOIN3;i<n;i++,j+=2){
             xy[j] = this.MESHX[i];
             xy[j+1] = this.MESHY[i];
             // xy[j+2] = this.MESHZ[i];
